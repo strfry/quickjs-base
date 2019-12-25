@@ -1,65 +1,52 @@
-import {h as m} from "preact" 
-import render from 'preact-render-to-string';
+import {h, Component} from "preact" 
+import {renderToString} from 'preact-render-to-string';
 
-const HTMLDocumentTemplate = {
-  view: vnode => [
-  m('!doctype[html]'),
-  m('head',
-    m('meta', {charset: 'utf-8'}),
-  ),
-  m('body',
-    m('script', {src: "https://unpkg.com/mithril@1.1.6/mithril.min.js"}),
-    m('script', {src: "https://unpkg.com/polythene-mithril/dist/polythene-mithril-standalone.js"}),
-    m('script', {src: './bundle.js', defer: true}),
-    vnode.children
-  )]
+import {print_object} from "./util.mjs"
+
+
+class ImportMap extends Component {
+  constructor(props) {
+    super(props)
+    console.log("MOUNT", props)
+    //print_object(this)
+    //print_object(props)
+    this.props.innerHTML= "123"
+    this.base = {}
+    this.base.innerHTML = 'hello';
+  }
+
+  render(props) {
+    const import_map_string = JSON.stringify(import_map)
+    //let import_map_tag = h('script', {type: "importmap-shim", dangerouslySetInnerHTML: import_map_string})
+    //return h('script', {type: "importmap-shim", dangerouslySetInnerHTML: import_map_string} )
+    //return h('div', {dangerouslySetInnerHTML: {__html: "foobuu"}})
+  }
+
+
 }
 
-/*
-async function render_index(req, res) {
-  const NeedsApp = await import("./needs")
-  console.log("await: ", NeedsApp)
-
-  getModel().then(model => {
-    console.log("the items i found: ", model)
+class HTMLDocumentTemplate extends Component {
+  render(props, state) {
     
-    var template = m(ServerLayout, m(NeedsApp, { stores: model}))
+    return h('head', null, 
+        h('meta', {charset: 'utf-8'}),
+        h('script', {defer: true, src: "https://unpkg.com/es-module-shims"}),
+        h('script', {type: 'module-shim', src: "/client.mjs"}),
+        //
+        h('script', {type: "importmap-shim", src: "/import_map.json"})
 
-    render(template).then(function (html) {
-      res.writeHead(200, {'Content-Type': 'text/html'})
-      res.end(html)
-    }).catch(error => {
-      res.writeHead(500)
-      console.log("ERR: ", error)
-      res.end(error.stack)
-    })
-  })
+      )
+  }
+  //h('script', {src: '/client.mjs', type: 'module-shim'})
 }
-*/
-
-import {import_module} from "./util.mjs"
-import { print_object } from "./util.mjs"
-
-//import * as std from "std"
-
-class App extends HTMLDocumentTemplate
-{
-  constructor() {}
-}
-
-//const App = `<div class="foo">content</div>;`
-
 
 // HACK: Pass QuickJS built-in module std and os as variables
 export default function(std, os) {
   print("Content-Type: text/html\r")
   print("\r")
 
-  //print("<h1>Hello World</h1>")  
+  let app = h(HTMLDocumentTemplate)
 
-  var app = new App()
-  let vnode = {}
-
-  var response = render(app.view(vnode))
-  print(response)
+  let html = renderToString(app)
+  print(html)
 }

@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "/client.mjs" : "/client.mjs",
+    "./needs.mjs" : "/needs.mjs",
+    "./model.mjs" : "/model.mjs",
+    "preact": "./node_modules/preact/dist/preact.module.js",
+
+    "foo": "//example.com/"
+  }
+}
