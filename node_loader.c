@@ -26,6 +26,10 @@
 
 #include "quickjs-libc.h" // for js_module_loader
 
+#include "cutils.h" // has_suffix
+
+#include <assert.h>
+
 #ifdef JS_SHARED_LIBRARY
 #define JS_INIT_MODULE js_init_module
 #else
@@ -59,8 +63,10 @@ void pprint(JSValue val) {
 JSModuleDef *nodejs_module_loader(JSContext *ctx,
                               const char *module_name, void *opaque)
 {
-    if (module_name[0] == '.' || module_name[0] == '/') {
+    //printf("nodejs_module_loader: %s\n", module_name);
+    if (module_name[0] == '.' || module_name[0] == '/' || has_suffix(module_name, ".so")) {
         // Looks like a relative path, use normal loader
+        //puts("EARLY FALLBACK");
         return js_module_loader(ctx, module_name, opaque);
     }
 
@@ -83,27 +89,78 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
         return m;
     }
 
-    puts("ERROR");
+    puts("nodejs_module_loader: ERROR");
     return NULL;
 }
 
-JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name)
-{
-    puts("JS_INIT_MODULE");
-    JSModuleDef *m;
 
+static JSValue js_node_loader_enable(JSContext *ctx, JSValueConst this_val,
+                      int argc, JSValueConst *argv)
+{
+    //puts("ENABLING NODE LOADER");
     JSRuntime* rt = JS_GetRuntime(ctx);
     JSModuleNormalizeFunc* normalizeFunc = JS_GetModuleNormalizeFunc(rt);
     JSModuleLoaderFunc* loaderFunc = JS_GetModuleLoaderFunc(rt);
 
+    if (0) {
+        int n, res;
+        JSValue module_name = JS_ToString(ctx, argv[0]);
+        if (!JS_IsString(module_name))
+            return JS_EXCEPTION;
+        const char *cstring = JS_ToCString(ctx, module_name);
+        js_module_loader(ctx, cstring, &js_module_loader);
+        JS_FreeCString(ctx, cstring);
+    }
 
     // Dirty...
-    JS_SetModuleLoaderFunc(rt, normalizeFunc, nodejs_module_loader, NULL);
+    if (loaderFunc != nodejs_module_loader) {
+        JS_SetModuleLoaderFunc(rt, normalizeFunc, nodejs_module_loader, loaderFunc);
+    }
+    return JS_UNDEFINED;
+}
 
-    m = nodejs_module_loader(ctx, module_name, 0);
+static JSValue js_node_loader_disable(JSContext *ctx, JSValueConst this_val,
+                      int argc, JSValueConst *argv)
+{
+    //puts("DISABLING NODE LOADER");
+    JSRuntime* rt = JS_GetRuntime(ctx);
+    JSModuleNormalizeFunc* normalizeFunc = JS_GetModuleNormalizeFunc(rt);
+    JSModuleLoaderFunc* loaderFunc = JS_GetModuleLoaderFunc(rt);
 
-    //JS_SetModuleLoaderFunc(rt, normalizeFunc, loaderFunc, NULL);
+    assert(loaderFunc == nodejs_module_loader && "node_loader: unexpected module loader function");
 
+    loaderFunc = js_module_loader; // HACK: Restore from properly managed state (jsc_module_loader...)
+
+    assert(loaderFunc != nodejs_module_loader);
+
+    JS_SetModuleLoaderFunc(rt, normalizeFunc, js_module_loader, 0);
+
+    return JS_UNDEFINED;
+}
+
+static const JSCFunctionListEntry js_loader_funcs[] = {
+    JS_CFUNC_DEF("enable", 1, js_node_loader_enable),
+    JS_CFUNC_DEF("disable", 0, js_node_loader_disable),
+};
+
+static int node_loader_init(JSContext *ctx, JSModuleDef *m)
+{
+    return JS_SetModuleExportList(ctx, m, js_loader_funcs,
+                                  sizeof(js_loader_funcs) / sizeof(js_loader_funcs[0]));
+}
+
+
+JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name)
+{
+    //puts("JS_INIT_MODULE");
+    JSModuleDef *m;
+
+    m = JS_NewCModule(ctx, module_name, node_loader_init);
+
+    JS_AddModuleExportList(ctx, m, js_loader_funcs,
+        sizeof(js_loader_funcs) / sizeof(js_loader_funcs[0]));
+
+    if (!m)
+        return NULL;
     return m;
-
 }
