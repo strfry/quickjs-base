@@ -89,6 +89,7 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
         return m;
     }
 
+    abort();
     puts("nodejs_module_loader: ERROR");
     return NULL;
 }

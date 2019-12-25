@@ -1,30 +1,24 @@
-import {enable, disable} from "./node_loader.so"
+//import {enable, disable} from "node_loader"
 
-function import_module(module_name) {
-    console.log(`import(${module_name})`)
-    var promise = import(module_name).
-    then(module => {
-        console.log(`loaded ${typeof(module)}`)
-        for (var key in module) {
-            console.log(key, "=>", module[key])
-        }
-    }).
-    catch(error => console.log(`error loading ${module_name}: ${error}`))
-    
-}
+import {print_object} from "./util.mjs"
 
-console.log("import before enable")
-import_module("./node_loader.so")
+import * as std from "std"
+import * as os from "os"
 
-var module = null
-enable()
 
-console.log("import after enable")
-import_module("./node_loader.so")
-import_module("preact")
+//enable()
 
-disable()
+import("./server.mjs")
+.then(module => {
+    //print_object(module)
+    module.default(std, os)
 
-console.log("import after disable")
+})
+.catch(error => {
+    print("\r\nERROR")
 
-import_module("preact")
+    console.log("error loading module: ", error)
+})
+
+
+//disable()
