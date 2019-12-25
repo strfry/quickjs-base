@@ -52,6 +52,10 @@ static JSValue get_package_json(JSContext* ctx, const char* package_name)
     return val;
 }
 
+void pprint(JSValue val) {
+    
+}
+
 JSModuleDef *nodejs_module_loader(JSContext *ctx,
                               const char *module_name, void *opaque)
 {
@@ -72,8 +76,11 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
         snprintf(filename, 1024, "./node_modules/%s/%s", module_name, c_path);
         JS_FreeCString(ctx, c_path);
 
-        //printf("nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
-        return js_module_loader(ctx, filename, opaque);
+        printf("nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
+        JSModuleDef *m = js_module_loader(ctx, filename, opaque);
+        if (!m) puts("NATIVE FALLBACK FAILED");
+        //pprint(m);
+        return m;
     }
 
     puts("ERROR");
@@ -82,6 +89,7 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
 
 JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name)
 {
+    puts("JS_INIT_MODULE");
     JSModuleDef *m;
 
     JSRuntime* rt = JS_GetRuntime(ctx);
@@ -94,5 +102,8 @@ JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name)
 
     m = nodejs_module_loader(ctx, module_name, 0);
 
-    JS_SetModuleLoaderFunc(rt, normalizeFunc, loaderFunc, NULL);
+    //JS_SetModuleLoaderFunc(rt, normalizeFunc, loaderFunc, NULL);
+
+    return m;
+
 }
