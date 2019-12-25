@@ -1,4 +1,5 @@
 import {h as m} from "preact" 
+import render from 'preact-render-to-string';
 
 const HTMLDocumentTemplate = {
   view: vnode => [
@@ -41,11 +42,24 @@ import { print_object } from "./util.mjs"
 
 //import * as std from "std"
 
+class App extends HTMLDocumentTemplate
+{
+  constructor() {}
+}
+
+//const App = `<div class="foo">content</div>;`
+
 
 // HACK: Pass QuickJS built-in module std and os as variables
 export default function(std, os) {
-  print("Content-type: text/html\r")
+  print("Content-Type: text/html\r")
   print("\r")
 
-  print("<h1>Hello World</h1>")  
+  //print("<h1>Hello World</h1>")  
+
+  var app = new App()
+  let vnode = {}
+
+  var response = render(app.view(vnode))
+  print(response)
 }
