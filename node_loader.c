@@ -30,6 +30,8 @@
 
 #include <assert.h>
 
+#include <sys/stat.h> // stat
+
 #ifdef JS_SHARED_LIBRARY
 #define JS_INIT_MODULE js_init_module
 #else
@@ -63,10 +65,13 @@ void pprint(JSValue val) {
 JSModuleDef *nodejs_module_loader(JSContext *ctx,
                               const char *module_name, void *opaque)
 {
-    //printf("nodejs_module_loader: %s\n", module_name);
-    if (module_name[0] == '.' || module_name[0] == '/' || has_suffix(module_name, ".so")) {
+    fprintf(stderr, "nodejs_module_loader: %s\n", module_name);
+
+    struct stat statbuf;
+    if (stat(module_name, &statbuf) == 0) {
+    //if (module_name[0] == '.' || module_name[0] == '/' || has_suffix(module_name, ".so")) {
         // Looks like a relative path, use normal loader
-        //puts("EARLY FALLBACK");
+        fprintf(stderr, "fallback to js_module_loader\n");
         return js_module_loader(ctx, module_name, opaque);
     }
 
