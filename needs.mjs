@@ -1,14 +1,20 @@
-import { h as m } from "preact"
+import { h, Component } from "preact"
+import { print_object } from "./util.mjs"
 
 //import {Card, Checkbox, ListTile, List, Icon, TextField } from 'polythene-mithril'
 
-/*
-const Item = {
-  view: vnode => {
-    console.log("trigger redraw", vnode.attrs)
-    vnode.state.checked = vnode.attrs.confirmed
-    return m(ListTile, {
-      title: vnode.attrs.name,
+class Item extends Component {
+  state = {
+    name: "Item",
+    checked: false
+  }
+  render(props, state) {
+    console.log("trigger redraw", props, state)
+    state.checked = attrs.confirmed
+    return h('li', //ListTile, 
+    {
+      title: props.name,
+      /*
       front: 
         m('paper-checkbox', {
           size: 'large',
@@ -23,9 +29,12 @@ const Item = {
           },
           checked: vnode.state.checked,
          }),
+         */
        })
     }
 }
+
+/*
 
 const addIconSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'
 const AddIcon = m(Icon, {svg: m.trust(addIconSVG), size: 'large' })
@@ -89,14 +98,27 @@ const StoreCard = {
 }
 */
 //export 
-const NeedsApp = {
-  view: (vnode) => {
-    var stores = vnode.attrs.stores
-    var keys = Object.keys(stores)
-     return m('div', {id: 'mountpoint'}, [keys.map(store => m(StoreCard, { store: store, items: stores[store]} )), 
-     ])
 
-    },
+
+class StoreCard extends Component {
+  render(props) {
+    return h('ul', null, props.store)
+  }
+}
+
+class NeedsApp extends Component {
+  state = {
+    stores: [{}, {}]
+  };
+
+  render (props, state) {
+     state.stores = props.stores
+
+     var keys = Object.keys(state.stores)
+     
+     var stores = keys.map(store => h(StoreCard, { store: store, items: state.stores[store]}))
+     return stores
+  }
 //  oninit: vnode => { console.log('oninit') },
 //  oncreate: vnode => console.log('oncreate'),
 //  onupdate: vnode => console.log('onupdate'),
@@ -104,5 +126,4 @@ const NeedsApp = {
 }
 
 
-//module.exports = { NeedsApp }
 export default NeedsApp

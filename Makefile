@@ -2,12 +2,12 @@
 
 QUICKJS_PREFIX=/usr/local/
 
-QUICKJS_LIBDIR=${QUICKJS_PREFIX}/lib/quickjs/
+QUICKJS_LIBDIR=quickjs
 
 QUICKJS_CFLAGS=-Iquickjs # -DJS_SHARED_LIBRARY
 QUICKJS_LDFLAGS=-L$(QUICKJS_LIBDIR) -lquickjs -lm -ldl
 CC=cc
-QJSC=qjsc
+QJSC=quickjs/qjsc
 
 all: deploy
 
@@ -25,13 +25,15 @@ static: node_loader.c loader.mjs
 	$(QJSC) -M node_loader,node_loader -e loader.mjs
 	${CC} -o static -static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 
+static-debug: node_loader.c quickjs/libquickjs.debug.a loader.mjs
+	quickjs/qjsc -M node_loader,node_loader -e loader.mjs
+	gcc -o static-debug -g node_loader.c out.c $(QUICKJS_CFLAGS) quickjs/libquickjs.debug.a -lm -ldl
+
 run: run-static
+
 run-static: node_loader.so static
 	./static
 
-#quickjs/libquickjs.a: quickjs
-
-quickjs:
 	make -C quickjs -j5
 
 node_loader.so: node_loader.c

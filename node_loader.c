@@ -81,15 +81,18 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
     if (stat(module_name, &statbuf) == 0 || module_name[0] == '.' || module_name[0] == '/') {
         // Looks like a relative path, use normal loader
         fprintf(stderr, "fallback to js_module_loader\n");
-        return js_module_loader(ctx, module_name, opaque);
+        JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
+        //puts("js_module_loader");
+        return m;
     }
 
+
+    // lookup in package.json...
     JSValue json = get_package_json(ctx, module_name);
     if (!JS_IsObject(json)) {
         return NULL;
     }
 
-    // check if json is a real object...
     JSValue modulePath = JS_GetPropertyStr(ctx, json, "module");
     JS_FreeValue(ctx, json);
 
@@ -102,7 +105,6 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
         fprintf(stderr, "nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
         JSModuleDef *m = js_module_loader(ctx, filename, opaque);
         if (!m) puts("NATIVE FALLBACK FAILED");
-        //pprint(m);
         return m;
     }
 

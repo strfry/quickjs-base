@@ -1,5 +1,6 @@
 
 function print_object(obj, depth=0) {
+    if (typeof(obj)!='object') return console.log("not an object")
     for (var key in obj) {
         console.log(depth* "\t", key, "=>", obj[key])
 

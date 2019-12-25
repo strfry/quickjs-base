@@ -2,6 +2,7 @@ import {h, Component} from "preact"
 import {renderToString} from 'preact-render-to-string';
 
 import {print_object} from "./util.mjs"
+import NeedsApp from "./needs.mjs";
 
 
 class ImportMap extends Component {
@@ -28,24 +29,22 @@ class ImportMap extends Component {
 class HTMLDocumentTemplate extends Component {
   render(props, state) {
     
-    return h('head', null, 
+    return [h('head', null, 
         h('meta', {charset: 'utf-8'}),
         h('script', {defer: true, src: "https://unpkg.com/es-module-shims"}),
         h('script', {type: 'module-shim', src: "/client.mjs"}),
         //
         h('script', {type: "importmap-shim", src: "/import_map.json"})
-
-      )
+    ), h('body', null, props.body)]
   }
   //h('script', {src: '/client.mjs', type: 'module-shim'})
 }
 
 // HACK: Pass QuickJS built-in module std and os as variables
 export default function(std, os) {
-  print("Content-Type: text/html\r")
-  print("\r")
-
-  let app = h(HTMLDocumentTemplate)
+  let app = h(HTMLDocumentTemplate,
+    {body: h(NeedsApp, {stores: { name: "Item"}})}, 
+  )
 
   let html = renderToString(app)
   print(html)
