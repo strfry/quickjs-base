@@ -1,4 +1,4 @@
-//import {enable, disable} from "node_loader"
+import {enable, disable} from "node_loader"
 
 import {print_object} from "./util.mjs"
 

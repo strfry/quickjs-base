@@ -15,12 +15,12 @@ dynamic: node_loader.so node_loader.c loader.mjs
 
 
 static: node_loader.c quickjs/libquickjs.a loader.mjs
-	quickjs/qjsc -M ./node_loader.so,node_loader -e loader.mjs
-	gcc -o static -rdynamic -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
+	quickjs/qjsc -M node_loader,node_loader -e loader.mjs
+	gcc -o static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 
-
-run: quickjs/qjs node_loader.so
-	quickjs/qjs loader.mjs
+run: run-static
+run-static: quickjs/qjs node_loader.so
+	./static
 
 quickjs/qjsc:
 	make -C quickjs -j5
