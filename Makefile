@@ -1,33 +1,42 @@
-QUICKJS_CFLAGS=-Iquickjs # -DJS_SHARED_LIBRARY
-QUICKJS_LDFLAGS=-Lquickjs -lquickjs -lm -ldl
+# Copyright 2019 - mail@strfry.org
 
+QUICKJS_PREFIX=/usr/local/
+
+QUICKJS_LIBDIR=${QUICKJS_PREFIX}/lib/quickjs/
+
+QUICKJS_CFLAGS=-Iquickjs # -DJS_SHARED_LIBRARY
+QUICKJS_LDFLAGS=-L$(QUICKJS_LIBDIR) -lquickjs -lm -ldl
+CC=cc
+QJSC=qjsc
 
 all: deploy
 
 a.out:  quickjs/qjsc node_loader.so node_loader.c loader.mjs
-	quickjs/qjsc -M preact,node_loader -e loader.mjs
-	gcc -rdynamic -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
+	$(QJSC) -M preact,node_loader -e loader.mjs
+	${CC} -rdynamic -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 	./a.out
 
 dynamic: node_loader.so node_loader.c loader.mjs
-	quickjs/qjsc -M node_loader,node_loader -e loader.mjs
-	gcc -o dynamic -rdynamic -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
+	$(QJSC) -M node_loader,node_loader -e loader.mjs
+	${CC} -o dynamic -rdynamic -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 
 
-static: node_loader.c quickjs/libquickjs.a loader.mjs
-	quickjs/qjsc -M node_loader,node_loader -e loader.mjs
-	gcc -o static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
+static: node_loader.c loader.mjs
+	$(QJSC) -M node_loader,node_loader -e loader.mjs
+	${CC} -o static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 
 run: run-static
 run-static: quickjs/qjs node_loader.so
 	./static
 
-quickjs/qjsc:
+#quickjs/libquickjs.a: quickjs
+
+quickjs:
 	make -C quickjs -j5
 
-node_loader.so: quickjs/libquickjs.a node_loader.c
-	gcc -fPIC -DJS_SHARED_LIBRARY node_loader.c -I quickjs -o node_loader.so -shared 
+node_loader.so: node_loader.c
+	$(CC) -fPIC -DJS_SHARED_LIBRARY node_loader.c -I quickjs -o node_loader.so -shared 
 
 deploy: dynamic static
-	mkdir -p cgi-bin
+	test -e cgi-bin || mkdir -p cgi-bin
 	cp dynamic static cgi-bin

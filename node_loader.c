@@ -52,7 +52,7 @@ static JSValue get_package_json(JSContext* ctx, const char* package_name)
         return JS_NULL;
     }
 
-    JSValue val = JS_ParseJSON(ctx, buf, buf_len, filename);
+    JSValue val = JS_ParseJSON(ctx, (char*)buf, buf_len, filename);
     js_free(ctx, buf);
 
     return val;
@@ -105,8 +105,8 @@ static JSValue js_node_loader_enable(JSContext *ctx, JSValueConst this_val,
 {
     //puts("ENABLING NODE LOADER");
     JSRuntime* rt = JS_GetRuntime(ctx);
-    JSModuleNormalizeFunc* normalizeFunc = JS_GetModuleNormalizeFunc(rt);
-    JSModuleLoaderFunc* loaderFunc = JS_GetModuleLoaderFunc(rt);
+    JSModuleNormalizeFunc* normalizeFunc = 0; // JS_GetModuleNormalizeFunc(rt);
+    JSModuleLoaderFunc* loaderFunc = 0; // JS_GetModuleLoaderFunc(rt);
 
     if (0) {
         int n, res;
@@ -130,8 +130,8 @@ static JSValue js_node_loader_disable(JSContext *ctx, JSValueConst this_val,
 {
     //puts("DISABLING NODE LOADER");
     JSRuntime* rt = JS_GetRuntime(ctx);
-    JSModuleNormalizeFunc* normalizeFunc = JS_GetModuleNormalizeFunc(rt);
-    JSModuleLoaderFunc* loaderFunc = JS_GetModuleLoaderFunc(rt);
+    JSModuleNormalizeFunc* normalizeFunc = 0; //JS_GetModuleNormalizeFunc(rt);
+    JSModuleLoaderFunc* loaderFunc = 0; // JS_GetModuleLoaderFunc(rt);
 
     assert(loaderFunc == nodejs_module_loader && "node_loader: unexpected module loader function");
 
