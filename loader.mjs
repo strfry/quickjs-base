@@ -5,9 +5,9 @@ import * as os from "os"
 
 import {print_object} from "./util.mjs"
 
-enable("/htdocs/node_modules")
+enable("./node_modules")
 
-import("/htdocs/server.mjs")
+import("./server.mjs")
 .then(module => {
     print("Content-Type: text/html\r")
     print("\r")
