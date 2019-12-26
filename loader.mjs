@@ -6,9 +6,9 @@ import * as std from "std"
 import * as os from "os"
 
 
-enable()
+enable("/htdocs/node_modules")
 
-import("./server.mjs")
+import("/htdocs/server.mjs")
 .then(module => {
     //print_object(module)
     module.default(std, os)
@@ -16,6 +16,8 @@ import("./server.mjs")
 })
 .catch(error => {
     print("\r\nERROR")
+
+    std.err.printf(os.getcwd())
 
     console.log("error loading module: ", error)
 })

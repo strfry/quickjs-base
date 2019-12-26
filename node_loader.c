@@ -31,6 +31,8 @@
 #include <assert.h>
 
 #include <sys/stat.h> // stat
+#include <limits.h> // PATH_MAX
+#include <string.h> // strncpy
 
 #ifdef JS_SHARED_LIBRARY
 #define JS_INIT_MODULE js_init_module
@@ -38,17 +40,25 @@
 #define JS_INIT_MODULE js_init_module_node_loader
 #endif
 
-static JSValue get_package_json(JSContext* ctx, const char* package_name)
+static char global_node_modules_path[PATH_MAX] = "./node_modules";
+
+static JSValue get_package_json(JSContext* ctx, const char* module_name)
 {
     char filename[1024] = {};
-    snprintf(filename, 1024, "./node_modules/%s/package.json", package_name);
+    snprintf(filename, 1024, "%s/%s/package.json", global_node_modules_path, module_name);
     
     uint8_t *buf;
     size_t buf_len;
+    struct stat statbuf;
+
+    if (stat(filename, &statbuf)) {
+        fprintf(stderr, "nodejs_module_loader: no package.json found for %s (%s)\n", module_name, filename);
+        return JS_NULL;
+    }
 
     buf = js_load_file(ctx, &buf_len, filename);
     if (!buf) {
-        perror(filename);
+        fprintf(stderr, "nodejs_module_loader: invalid file %s\n", filename);
         return JS_NULL;
     }
 
@@ -68,14 +78,16 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
     fprintf(stderr, "nodejs_module_loader: %s\n", module_name);
 
     struct stat statbuf;
-    if (stat(module_name, &statbuf) == 0) {
-    //if (module_name[0] == '.' || module_name[0] == '/' || has_suffix(module_name, ".so")) {
+    if (stat(module_name, &statbuf) == 0 || module_name[0] == '.' || module_name[0] == '/') {
         // Looks like a relative path, use normal loader
         fprintf(stderr, "fallback to js_module_loader\n");
         return js_module_loader(ctx, module_name, opaque);
     }
 
     JSValue json = get_package_json(ctx, module_name);
+    if (!JS_IsObject(json)) {
+        return NULL;
+    }
 
     // check if json is a real object...
     JSValue modulePath = JS_GetPropertyStr(ctx, json, "module");
@@ -84,10 +96,10 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
     if (JS_IsString(modulePath)) {
         char filename[1024];
         const char* c_path = JS_ToCString(ctx, modulePath);
-        snprintf(filename, 1024, "./node_modules/%s/%s", module_name, c_path);
+        snprintf(filename, 1024, "%s/%s/%s", global_node_modules_path, module_name, c_path);
         JS_FreeCString(ctx, c_path);
 
-        printf("nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
+        fprintf(stderr, "nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
         JSModuleDef *m = js_module_loader(ctx, filename, opaque);
         if (!m) puts("NATIVE FALLBACK FAILED");
         //pprint(m);
@@ -108,13 +120,11 @@ static JSValue js_node_loader_enable(JSContext *ctx, JSValueConst this_val,
     JSModuleNormalizeFunc* normalizeFunc = 0; // JS_GetModuleNormalizeFunc(rt);
     JSModuleLoaderFunc* loaderFunc = 0; // JS_GetModuleLoaderFunc(rt);
 
-    if (0) {
-        int n, res;
-        JSValue module_name = JS_ToString(ctx, argv[0]);
-        if (!JS_IsString(module_name))
-            return JS_EXCEPTION;
-        const char *cstring = JS_ToCString(ctx, module_name);
-        js_module_loader(ctx, cstring, &js_module_loader);
+    int n, res;
+    JSValue modules_path = JS_ToString(ctx, argv[0]);
+    if (JS_IsString(modules_path)) {
+        const char *cstring = JS_ToCString(ctx, modules_path);
+        strncpy(global_node_modules_path, cstring, sizeof(global_node_modules_path));
         JS_FreeCString(ctx, cstring);
     }
 

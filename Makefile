@@ -23,10 +23,10 @@ dynamic: node_loader.so node_loader.c loader.mjs
 
 static: node_loader.c loader.mjs
 	$(QJSC) -M node_loader,node_loader -e loader.mjs
-	${CC} -o static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
+	${CC} -o static -static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 
 run: run-static
-run-static: quickjs/qjs node_loader.so
+run-static: node_loader.so static
 	./static
 
 #quickjs/libquickjs.a: quickjs
@@ -38,5 +38,6 @@ node_loader.so: node_loader.c
 	$(CC) -fPIC -DJS_SHARED_LIBRARY node_loader.c -I quickjs -o node_loader.so -shared 
 
 deploy: dynamic static
-	test -e cgi-bin || mkdir -p cgi-bin
+	(test -e cgi-bin || mkdir -p cgi-bin) && (test -e htdocs || mkdir htdocs)
 	cp dynamic static cgi-bin
+	cp *.mjs htdocs
