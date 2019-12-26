@@ -4,6 +4,7 @@ import {renderToString} from 'preact-render-to-string';
 import {print_object} from "./util.mjs"
 import NeedsApp from "./needs.mjs";
 
+import { getModel } from "./model.mjs"
 
 class ImportMap extends Component {
   constructor(props) {
@@ -42,8 +43,10 @@ class HTMLDocumentTemplate extends Component {
 
 // HACK: Pass QuickJS built-in module std and os as variables
 export default function(std, os) {
+  let model = getModel()
+
   let app = h(HTMLDocumentTemplate,
-    {body: h(NeedsApp, {stores: { name: "Item"}})}, 
+    {body: h(NeedsApp, model)}, 
   )
 
   let html = renderToString(app)

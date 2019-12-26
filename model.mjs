@@ -1,5 +1,12 @@
 export function getModel() {
-  return {}
+  return { "stores" : {
+    "36C3": [
+      "Ankommen", 
+      "Sticker sammeln", 
+      "Vortraege schauen", 
+    ]
+    }
+  }
 }
 
 /*
