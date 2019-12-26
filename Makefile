@@ -41,3 +41,4 @@ deploy: dynamic static
 	(test -e cgi-bin || mkdir -p cgi-bin) && (test -e htdocs || mkdir htdocs)
 	cp dynamic static cgi-bin
 	cp *.mjs htdocs
+	cp import_map.json htdocs
