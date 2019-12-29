@@ -11,10 +11,13 @@ CC=cc
 
 HAS_QUICKJS=$(shell command -v qjsc)
 
+all: dynamic static quickjs_build
+
+
 ifndef HAS_QUICKJS
 $(warning "No qjsc found in PATH, adding quickjs to dependencies")
 QJSC=quickjs/qjsc
-quickjs_build: quickjs/libquickjs.a
+$(QJSC): quickjs/libquickjs.a
 
 else
 
@@ -23,7 +26,6 @@ quickjs_build:
 
 endif
 
-all: $(QUICKJS_LIBDIR)/libquickjs.a dynamic static
 
 quickjs/libquickjs.a:
 	make -C quickjs -j5
@@ -31,12 +33,12 @@ quickjs/libquickjs.a:
 node_loader.so: node_loader.c
 	$(CC) -fPIC -DJS_SHARED_LIBRARY node_loader.c -I$(QUICKJS_INCDIR) -o node_loader.so -shared 
 
-dynamic: $(QUICKJS_LIBDIR)/libquickjs.a node_loader.so loader.mjs util.mjs
+dynamic: quickjs_build node_loader.so loader.mjs src/util.mjs
 	$(QJSC) -M node_loader,node_loader -e loader.mjs
 	${CC} -o dynamic -rdynamic -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 
 
-static: $(QUICKJS_LIBDIR)/libquickjs.a node_loader.c loader.mjs util.mjs
+static: quickjs_build node_loader.c loader.mjs src/util.mjs
 	$(QJSC) -M node_loader,node_loader -e loader.mjs
 	${CC} -o static -static -g node_loader.c out.c $(QUICKJS_CFLAGS) $(QUICKJS_LDFLAGS) -L.
 

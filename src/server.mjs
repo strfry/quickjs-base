@@ -1,3 +1,5 @@
+#!/cgi-bin/static
+
 import {h, Component} from "preact" 
 import {renderToString} from 'preact-render-to-string';
 

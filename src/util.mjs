@@ -1,8 +1,13 @@
+export function dump(...args) {
+    std.out.printf(...args)
+    std.err.printf(...args)
+}
+
 
 function print_object(obj, depth=0) {
     if (typeof(obj)!='object') return console.log("not an object")
     for (var key in obj) {
-        console.log(depth* "\t", key, "=>", obj[key])
+        dump(depth* "\t", key, "=>", obj[key])
 
         if (typeof(obj[key] == 'object')) {
             print_object(obj[key], depth+1)
@@ -11,10 +16,10 @@ function print_object(obj, depth=0) {
 }
 
 function import_module(module_name) {
-    console.log(`import(${module_name})`)
+    dump(`import(${module_name})`)
     var promise = import(module_name).
     then(module => {
-        console.log(`loaded ${typeof(module)}`)
+        dump(`loaded ${typeof(module)}`)
         print_object(module)
     }).
     catch(error => console.log(`error loading ${module_name}: ${error}`))
