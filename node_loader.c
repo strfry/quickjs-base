@@ -43,11 +43,12 @@ int has_suffix(const char *str, const char *suffix);
 #endif
 
 static char global_node_modules_path[PATH_MAX] = "./node_modules";
+static char global_working_directory_path[PATH_MAX] = "./";
 
 static JSValue get_package_json(JSContext* ctx, const char* module_name)
 {
     char filename[1024] = {};
-    snprintf(filename, 1024, "%s/%s/package.json", global_node_modules_path, module_name);
+    snprintf(filename, 1024, "%s/%s/%s/package.json", global_working_directory_path, global_node_modules_path, module_name);
     
     uint8_t *buf;
     size_t buf_len;
@@ -77,13 +78,16 @@ void pprint(JSValue val) {
 JSModuleDef *nodejs_module_loader(JSContext *ctx,
                               const char *module_name, void *opaque)
 {
-    fprintf(stderr, "nodejs_module_loader: %s\n", module_name);
+    char filename[PATH_MAX] = {};
+    snprintf(filename, PATH_MAX, "%s/%s", global_working_directory_path, module_name);
+
+    fprintf(stderr, "nodejs_module_loader: %s -> %s\n", module_name, filename);
 
     struct stat statbuf;
     if (stat(module_name, &statbuf) == 0 || module_name[0] == '.' || module_name[0] == '/') {
         // Looks like a relative path, use normal loader
         fprintf(stderr, "fallback to js_module_loader\n");
-        JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
+        JSModuleDef *m = js_module_loader(ctx, filename, opaque);
         //puts("js_module_loader");
         return m;
     }
@@ -101,7 +105,7 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
     if (JS_IsString(modulePath)) {
         char filename[1024];
         const char* c_path = JS_ToCString(ctx, modulePath);
-        snprintf(filename, 1024, "%s/%s/%s", global_node_modules_path, module_name, c_path);
+        snprintf(filename, 1024, "%s/%s/%s/%s", global_working_directory_path, global_node_modules_path, module_name, c_path);
         JS_FreeCString(ctx, c_path);
 
         fprintf(stderr, "nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
@@ -110,8 +114,8 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
         return m;
     }
 
+    fprintf(stderr, "nodejs_module_loader: ERROR");
     abort();
-    puts("nodejs_module_loader: ERROR");
     return NULL;
 }
 
