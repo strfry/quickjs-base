@@ -55,3 +55,4 @@ deploy: dynamic static
 	cp *.mjs htdocs
 	cp import_map.json htdocs
 	cp package.json htdocs
+	cp -r node_modules htdocs

@@ -3,38 +3,57 @@ import {enable, disable} from "node_loader"
 import * as std from "std"
 import * as os from "os"
 
-import {dump, print_object} from "./util.mjs"
+import {print_object} from "./util.mjs"
+
+var alt_stdout = os.dup(1)
+var alt_stderr = os.dup(2)
+
+let _std = {
+    out: std.fdopen(alt_stdout, 'w'),
+    err: std.fdopen(alt_stderr, 'w'),
+}
+
+let stdout_fds = os.pipe()
+if (os.dup2(stdout_fds[1], 1)) {}
+os.close(stdout_fds[1])
+
+
+let stderr_fds = os.pipe()
+if (os.dup2(stderr_fds[1], 2)) {}
+os.close(stderr_fds[1])
+
+var stdout_file = std.fdopen(stdout_fds[0], 'r')
+var stderr_file = std.fdopen(stderr_fds[0], 'r')
+
+var stdout_buf = ""
+var stderr_buf = ""
+
+
 
 enable("/htdocs/node_modules")
-
-
-function dump_environment() {
-//    var input = std.in.readAsString()
-//    dump("input: %s\n", input)
-
-//    dump("getcwd %s\n", typeof(os.getcwd()))
-
-    dump("scriptArgs %s\n", scriptArgs)
-
-    dump("getenv %s\n", typeof(os.getenv()))
-    print_object(os.getenv())
-}
 
 import("/src/server.mjs")
 .then(module => {
     print("Content-Type: text/html\r")
     print("\r")
-    
-    module.default(std, os)
 
+    module.default(_std, os)
+
+    std.exit(0)
 })
 .catch(error => {
-    dump("\r\nERROR")
+    std.out.puts("END")
+    std.err.puts("END")
+    
+    os.close(1)
+    os.close(2)
 
-    dump_environment()
-    console.log("error loading module: ", error)
+    _std.out.puts("\r\n")
 
+    _std.out.puts("--- ERROR DUMP -----\n\n")
+
+    _std.out.printf("stdout: %s\n", stdout_file.readAsString())
+    _std.out.printf("stderr: %s\n", stderr_file.readAsString())
 })
-
 
 //disable()

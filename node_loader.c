@@ -77,11 +77,10 @@ void pprint(JSValue val) {
     
 }
 
-JSModuleDef *nodejs_module_loader(JSContext *ctx,
+JSModuleDef *node_module_loader(JSContext *ctx,
                               const char *module_name, void *opaque)
 {
     char filename[PATH_MAX] = {};
-    snprintf(filename, PATH_MAX, "%s/%s", global_working_directory_path, module_name);
 
     fprintf(stderr, "nodejs_module_loader: %s -> %s\n", module_name, filename);
 
@@ -89,7 +88,7 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
     if (stat(module_name, &statbuf) == 0 || module_name[0] == '.' || module_name[0] == '/') {
         // Looks like a relative path, use normal loader
         fprintf(stderr, "fallback to js_module_loader\n");
-        JSModuleDef *m = js_module_loader(ctx, filename, opaque);
+        JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
         //puts("js_module_loader");
         return m;
     }
@@ -98,6 +97,7 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
     // lookup in package.json...
     JSValue json = get_package_json(ctx, module_name);
     if (!JS_IsObject(json)) {
+        fprintf(stderr, "node_loader: Could not find package in %s/%s/%s\n", global_working_directory_path, global_node_modules_path, module_name);
         return NULL;
     }
 
@@ -110,9 +110,10 @@ JSModuleDef *nodejs_module_loader(JSContext *ctx,
         snprintf(filename, 1024, "%s/%s/%s/%s", global_working_directory_path, global_node_modules_path, module_name, c_path);
         JS_FreeCString(ctx, c_path);
 
-        fprintf(stderr, "nodejs_module_loader: %p %s -> %s\n", ctx, module_name, filename);
-        JSModuleDef *m = js_module_loader(ctx, filename, opaque);
+        fprintf(stderr, "nodejs_module_loader recursion: %p %s -> %s\n", ctx, module_name, filename);
+        JSModuleDef *m = node_module_loader(ctx, filename, opaque);
         if (!m) puts("NATIVE FALLBACK FAILED");
+        puts("FALLBACK RESULT");
         return m;
     }
 
@@ -135,12 +136,13 @@ static JSValue js_node_loader_enable(JSContext *ctx, JSValueConst this_val,
     if (JS_IsString(modules_path)) {
         const char *cstring = JS_ToCString(ctx, modules_path);
         strncpy(global_node_modules_path, cstring, sizeof(global_node_modules_path));
+        fprintf(stderr, "DEBUG: node_loader: set global_node_modules_path = %s\n", global_node_modules_path);
         JS_FreeCString(ctx, cstring);
     }
 
     // Dirty...
-    if (loaderFunc != nodejs_module_loader) {
-        JS_SetModuleLoaderFunc(rt, normalizeFunc, nodejs_module_loader, loaderFunc);
+    if (loaderFunc != node_module_loader) {
+        JS_SetModuleLoaderFunc(rt, normalizeFunc, node_module_loader, loaderFunc);
     }
     return JS_UNDEFINED;
 }
@@ -153,11 +155,11 @@ static JSValue js_node_loader_disable(JSContext *ctx, JSValueConst this_val,
     JSModuleNormalizeFunc* normalizeFunc = 0; //JS_GetModuleNormalizeFunc(rt);
     JSModuleLoaderFunc* loaderFunc = 0; // JS_GetModuleLoaderFunc(rt);
 
-    assert(loaderFunc == nodejs_module_loader && "node_loader: unexpected module loader function");
+    assert(loaderFunc == node_module_loader && "node_loader: unexpected module loader function");
 
     loaderFunc = js_module_loader; // HACK: Restore from properly managed state (jsc_module_loader...)
 
-    assert(loaderFunc != nodejs_module_loader);
+    assert(loaderFunc != node_module_loader);
 
     JS_SetModuleLoaderFunc(rt, normalizeFunc, js_module_loader, 0);
 

@@ -1,13 +1,9 @@
-export function dump(...args) {
-    std.out.printf(...args)
-    std.err.printf(...args)
-}
 
 
-function print_object(obj, depth=0) {
-    if (typeof(obj)!='object') return console.log("not an object")
+function print_object(obj, depth=0, print=std.out.print) {
+    if (typeof(obj)!='object') return print("not an object")
     for (var key in obj) {
-        dump(depth* "\t", key, "=>", obj[key])
+        print(depth* "\t", key, "=>", obj[key])
 
         if (typeof(obj[key] == 'object')) {
             print_object(obj[key], depth+1)

@@ -1,4 +1,4 @@
-#!/cgi-bin/static
+#!static
 
 import {h, Component} from "preact" 
 import {renderToString} from 'preact-render-to-string';
@@ -52,5 +52,5 @@ export default function(std, os) {
   )
 
   let html = renderToString(app)
-  print(html)
+  std.out.print(html)
 }
