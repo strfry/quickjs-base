@@ -1,13 +1,27 @@
 # Copyright 2019 - mail@strfry.org
 
-QUICKJS_PREFIX=/usr/local/
+QUICKJS_PREFIX=/usr/local
 
-QUICKJS_LIBDIR=quickjs
+QUICKJS_LIBDIR=$(QUICKJS_PREFIX)/lib/quickjs
+QUICKJS_INCDIR=$(QUICKJS_PREFIX)/include/quickjs
 
-QUICKJS_CFLAGS=-Iquickjs # -DJS_SHARED_LIBRARY
+QUICKJS_CFLAGS=-I$(QUICKJS_INCDIR) # -DJS_SHARED_LIBRARY
 QUICKJS_LDFLAGS=-L$(QUICKJS_LIBDIR) -lquickjs -lpthread -lm -ldl
 CC=cc
+
+HAS_QUICKJS=$(shell command -v qjsc)
+
+ifndef HAS_QUICKJS
+$(warning "No qjsc found in PATH, adding quickjs to dependencies")
 QJSC=quickjs/qjsc
+quickjs_build: quickjs/libquickjs.a
+
+else
+
+QJSC=qjsc
+quickjs_build:
+
+endif
 
 all: $(QUICKJS_LIBDIR)/libquickjs.a dynamic static
 
@@ -15,7 +29,7 @@ quickjs/libquickjs.a:
 	make -C quickjs -j5
 
 node_loader.so: node_loader.c
-	$(CC) -fPIC -DJS_SHARED_LIBRARY node_loader.c -I quickjs -o node_loader.so -shared 
+	$(CC) -fPIC -DJS_SHARED_LIBRARY node_loader.c -I$(QUICKJS_INCDIR) -o node_loader.so -shared 
 
 dynamic: $(QUICKJS_LIBDIR)/libquickjs.a node_loader.so loader.mjs util.mjs
 	$(QJSC) -M node_loader,node_loader -e loader.mjs

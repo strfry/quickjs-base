@@ -26,7 +26,9 @@
 
 #include "quickjs-libc.h" // for js_module_loader
 
-#include "cutils.h" // has_suffix
+//#include "cutils.h" // has_suffix
+int has_suffix(const char *str, const char *suffix);
+
 
 #include <assert.h>
 
