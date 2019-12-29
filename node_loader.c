@@ -29,6 +29,8 @@
 //#include "cutils.h" // has_suffix
 int has_suffix(const char *str, const char *suffix);
 
+#include <unistd.h> // getcwd
+
 
 #include <assert.h>
 
@@ -176,8 +178,9 @@ static int node_loader_init(JSContext *ctx, JSModuleDef *m)
 
 JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name)
 {
-    //puts("JS_INIT_MODULE");
     JSModuleDef *m;
+
+    getcwd(global_working_directory_path, PATH_MAX);
 
     m = JS_NewCModule(ctx, module_name, node_loader_init);
 

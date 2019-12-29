@@ -3,7 +3,7 @@ import {enable, disable} from "node_loader"
 import * as std from "std"
 import * as os from "os"
 
-import {dump, print_object} from "./src/util.mjs"
+import {dump, print_object} from "./util.mjs"
 
 enable("/htdocs/node_modules")
 
@@ -12,7 +12,7 @@ function dump_environment() {
 //    var input = std.in.readAsString()
 //    dump("input: %s\n", input)
 
-    dump("getcwd %s\n", typeif(os.getcwd()))
+//    dump("getcwd %s\n", typeof(os.getcwd()))
 
     dump("scriptArgs %s\n", scriptArgs)
 
@@ -29,9 +29,8 @@ import("/src/server.mjs")
 
 })
 .catch(error => {
-    print("\r\nERROR")
+    dump("\r\nERROR")
 
-    puts("dump")
     dump_environment()
     console.log("error loading module: ", error)
 
