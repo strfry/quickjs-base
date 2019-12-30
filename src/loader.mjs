@@ -15,13 +15,15 @@ let _std = {
     err: std.fdopen(alt_stderr, 'w'),
 }
 
+const rebind_stdio = true
 
-//if (os.dup2(stdout_fds[1], 1)) {}
-//os.close(stdout_fds[1])
+if (rebind_stdio ) {
+    if (os.dup2(stdout_fds[1], 1)) {/* error handling */}
+    os.close(stdout_fds[1])
 
-//if (os.dup2(stderr_fds[1], 2)) {}
-//os.close(stderr_fds[1])
-
+    if (os.dup2(stderr_fds[1], 2)) {/* error handling */}
+    os.close(stderr_fds[1])
+}
 
 var stdout_file = std.fdopen(stdout_fds[0], 'r')
 var stderr_file = std.fdopen(stderr_fds[0], 'r')
@@ -29,22 +31,20 @@ var stderr_file = std.fdopen(stderr_fds[0], 'r')
 var stdout_buf = ""
 var stderr_buf = ""
 
-
-
 enable("/htdocs/node_modules")
 
 import("/src/server.mjs")
 .then(module => {
-    print("Content-Type: text/html\r")
-    print("\r")
+    _std.out.print("Content-Type: text/html\r")
+    _std.out.printprint("\r\n")
 
     module.default(_std, os)
 
     std.exit(0)
 })
 .catch(error => {
-    std.out.puts("END")
-    std.err.puts("END")
+    //std.out.puts("END")
+    //std.err.puts("END")
     
     os.close(1)
     os.close(2)
@@ -53,14 +53,15 @@ import("/src/server.mjs")
 
     _std.out.puts("\n---- REPORTED ERROR -----\n")
 
-    //_std.out.puts(error)
+    _std.out.printf("%s\n", error)
     _std.out.puts("")
     //_std.out.puts(typeof(error))
 
-    _std.out.puts("\n--- ERROR DUMP -----\n\n")
-
-    _std.out.printf("stdout: %s\n", stdout_file.readAsString())
-    //_std.out.printf("stderr: %s\n", stderr_file.readAsString())
+    if (rebind_stdio) {
+        _std.out.puts("\n--- ERROR DUMP -----\n\n")
+        _std.out.printf("stdout: %s\n", stdout_file.readAsString())
+        _std.out.printf("stderr: %s\n", stderr_file.readAsString())
+    }
 })
 
 //disable()
