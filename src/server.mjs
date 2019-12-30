@@ -1,5 +1,3 @@
-#!static
-
 import {h, Component} from "preact" 
 import {renderToString} from 'preact-render-to-string';
 
@@ -7,6 +5,7 @@ import {print_object} from "./util.mjs"
 import NeedsApp from "./needs.mjs";
 
 import { getModel } from "./model.mjs"
+
 
 class ImportMap extends Component {
   constructor(props) {
@@ -52,5 +51,5 @@ export default function(std, os) {
   )
 
   let html = renderToString(app)
-  std.out.print(html)
+  std.out.printf(html)
 }

@@ -1,9 +1,12 @@
+import * as std from "std";
 
-
-function print_object(obj, depth=0, print=std.out.print) {
-    if (typeof(obj)!='object') return print("not an object")
+function print_object(obj, depth=0, dump=std.out.printf) {
+    if (typeof(obj)!='object') {
+        dump("not an object")
+        return
+    }
     for (var key in obj) {
-        print(depth* "\t", key, "=>", obj[key])
+        dump(depth* "\t", key, "=>", obj[key])
 
         if (typeof(obj[key] == 'object')) {
             print_object(obj[key], depth+1)

@@ -33,6 +33,7 @@ int has_suffix(const char *str, const char *suffix);
 
 
 #include <assert.h>
+#include <stdbool.h>
 
 #include <sys/stat.h> // stat
 #include <limits.h> // PATH_MAX
@@ -45,19 +46,34 @@ int has_suffix(const char *str, const char *suffix);
 #endif
 
 static char global_node_modules_path[PATH_MAX] = "./node_modules";
-static char global_working_directory_path[PATH_MAX] = "./";
+static char global_root_directory_path[PATH_MAX] = "/";
 
-static JSValue get_package_json(JSContext* ctx, const char* module_name)
+
+static bool is_relative(const char* module_name) {
+    return module_name[0] == '.';
+} 
+
+static bool is_absolute(const char* module_name) {
+    return module_name[0] == '/';
+} 
+
+static bool file_exists(const char* path) {
+
+    struct stat statbuf;
+    return stat(path, &statbuf) == 0;
+}
+
+static JSValue find_package_json(JSContext* ctx, const char* module_path)
 {
-    char filename[1024] = {};
-    snprintf(filename, 1024, "%s/%s/%s/package.json", global_working_directory_path, global_node_modules_path, module_name);
+    char filename[PATH_MAX] = {};
+    snprintf(filename, 1024, "%s/package.json", module_path);
     
     uint8_t *buf;
     size_t buf_len;
     struct stat statbuf;
 
     if (stat(filename, &statbuf)) {
-        fprintf(stderr, "nodejs_module_loader: no package.json found for %s (%s)\n", module_name, filename);
+        fprintf(stderr, "nodejs_module_loader: no package.json found for %s\n", module_path);
         return JS_NULL;
     }
 
@@ -73,31 +89,52 @@ static JSValue get_package_json(JSContext* ctx, const char* module_name)
     return val;
 }
 
-void pprint(JSValue val) {
-    
-}
 
 JSModuleDef *node_module_loader(JSContext *ctx,
                               const char *module_name, void *opaque)
 {
-    char filename[PATH_MAX] = {};
+    fprintf(stderr, "DEBUG: node_loader(): %s\n", module_name);
 
-    fprintf(stderr, "nodejs_module_loader: %s -> %s\n", module_name, filename);
+    char module_path[PATH_MAX] = {};
 
-    struct stat statbuf;
-    if (stat(module_name, &statbuf) == 0 || module_name[0] == '.' || module_name[0] == '/') {
-        // Looks like a relative path, use normal loader
-        fprintf(stderr, "fallback to js_module_loader\n");
+    if (is_relative(module_name) && file_exists(module_name)) {
+        fprintf(stderr, "fallback to js_module_loader 1\n");
         JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
-        //puts("js_module_loader");
+
+        if (m) return m;
+
+        fprintf(stderr, "fallback to js_module_loader 3\n");
+        snprintf(module_path, PATH_MAX, "%s/%s", global_root_directory_path, module_name);
+        m = js_module_loader(ctx, module_name, opaque);
         return m;
     }
 
 
+    if (is_absolute(module_name)) {
+        if (file_exists(module_name)) {
+            JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
+            if (m) return m;
+        }
+
+        snprintf(module_path, PATH_MAX, "%s/%s", global_root_directory_path, module_name);
+        if (!file_exists(module_path)) {
+            fprintf(stderr, "node_loader: absolute path %s given, but not found. returning NULL\n", module_path);
+            return NULL;
+        }
+        JSModuleDef *m = js_module_loader(ctx, module_path, opaque);
+
+        return m;
+    }
+
+    // IF node folder is enabled...
+
     // lookup in package.json...
-    JSValue json = get_package_json(ctx, module_name);
+
+    snprintf(module_path, PATH_MAX, "%s/%s/%s", global_root_directory_path, global_node_modules_path, module_name);
+
+    JSValue json = find_package_json(ctx, module_path);
     if (!JS_IsObject(json)) {
-        fprintf(stderr, "node_loader: Could not find package in %s/%s/%s\n", global_working_directory_path, global_node_modules_path, module_name);
+        fprintf(stderr, "node_loader: Could not find package in %s\n", module_path);
         return NULL;
     }
 
@@ -105,13 +142,13 @@ JSModuleDef *node_module_loader(JSContext *ctx,
     JS_FreeValue(ctx, json);
 
     if (JS_IsString(modulePath)) {
-        char filename[1024];
+        char filename[PATH_MAX];
         const char* c_path = JS_ToCString(ctx, modulePath);
-        snprintf(filename, 1024, "%s/%s/%s/%s", global_working_directory_path, global_node_modules_path, module_name, c_path);
+        snprintf(filename, PATH_MAX, "%s/%s/%s/%s", global_root_directory_path, global_node_modules_path, module_name, c_path);
         JS_FreeCString(ctx, c_path);
 
-        fprintf(stderr, "nodejs_module_loader recursion: %p %s -> %s\n", ctx, module_name, filename);
-        JSModuleDef *m = node_module_loader(ctx, filename, opaque);
+        fprintf(stderr, "node_loader: package.json : -> %s\n", filename);
+        JSModuleDef *m = js_module_loader(ctx, filename, opaque);
         if (!m) puts("NATIVE FALLBACK FAILED");
         puts("FALLBACK RESULT");
         return m;
@@ -182,7 +219,7 @@ JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name)
 {
     JSModuleDef *m;
 
-    getcwd(global_working_directory_path, PATH_MAX);
+    getcwd(global_root_directory_path, PATH_MAX);
 
     m = JS_NewCModule(ctx, module_name, node_loader_init);
 
