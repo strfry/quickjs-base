@@ -149,8 +149,6 @@ JSModuleDef *node_module_loader(JSContext *ctx,
 
         fprintf(stderr, "node_loader: package.json : -> %s\n", filename);
         JSModuleDef *m = js_module_loader(ctx, filename, opaque);
-        if (!m) puts("NATIVE FALLBACK FAILED");
-        puts("FALLBACK RESULT");
         return m;
     }
 
