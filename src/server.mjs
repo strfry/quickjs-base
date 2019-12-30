@@ -1,10 +1,8 @@
-import {h, Component} from "preact" 
+import {h, Component} from "preact";
 import {renderToString} from 'preact-render-to-string';
 
-import {print_object} from "./util.mjs"
-import NeedsApp from "./needs.mjs";
-
 import { getModel } from "./model.mjs"
+import NeedsApp from "./needs.mjs";
 
 
 class ImportMap extends Component {
@@ -42,8 +40,14 @@ class HTMLDocumentTemplate extends Component {
   //h('script', {src: '/client.mjs', type: 'module-shim'})
 }
 
+
 // HACK: Pass QuickJS built-in module std and os as variables
-export default function(std, os) {
+
+//import * as std from "std"
+
+//std.out.puts("test")
+
+export default function(stdin, stdout) {
   let model = getModel()
 
   let app = h(HTMLDocumentTemplate,
@@ -51,5 +55,5 @@ export default function(std, os) {
   )
 
   let html = renderToString(app)
-  std.out.printf(html)
+  stdout.puts(html)
 }

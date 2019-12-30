@@ -33,14 +33,15 @@ var stderr_buf = ""
 
 enable("/htdocs/node_modules")
 
-import("/src/server.mjs")
+import("./server.mjs")
 .then(module => {
-    _std.out.print("Content-Type: text/html\r")
-    _std.out.printprint("\r\n")
+    _std.out.printf("Content-Type: text/html\r\n")
+    _std.out.printf("\r\n")
 
-    module.default(_std, os)
+    module.default(_std.in, _std.out)
 
     std.exit(0)
+    
 })
 .catch(error => {
     //std.out.puts("END")

@@ -6,7 +6,7 @@ QUICKJS_LIBDIR=$(QUICKJS_PREFIX)/lib/quickjs
 QUICKJS_INCDIR=$(QUICKJS_PREFIX)/include/quickjs
 
 QUICKJS_CFLAGS=-I$(QUICKJS_INCDIR) # -DJS_SHARED_LIBRARY
-QUICKJS_LDFLAGS=-L$(QUICKJS_LIBDIR) -lquickjs -lpthread -lm -ldl
+QUICKJS_LDFLAGS=-L$(QUICKJS_LIBDIR) -Lquickjs -lquickjs -lpthread -lm -ldl
 CC=cc
 
 HAS_QUICKJS=$(shell command -v qjsc)

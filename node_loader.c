@@ -109,13 +109,12 @@ JSModuleDef *node_module_loader(JSContext *ctx,
         return m;
     }
 
+    if (file_exists(module_name)) {
+        JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
+        if (m) return m;
+    }
 
     if (is_absolute(module_name)) {
-        if (file_exists(module_name)) {
-            JSModuleDef *m = js_module_loader(ctx, module_name, opaque);
-            if (m) return m;
-        }
-
         snprintf(module_path, PATH_MAX, "%s/%s", global_root_directory_path, module_name);
         if (!file_exists(module_path)) {
             fprintf(stderr, "node_loader: absolute path %s given, but not found. returning NULL\n", module_path);
