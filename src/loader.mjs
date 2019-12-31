@@ -31,15 +31,74 @@ var stderr_file = std.fdopen(stderr_fds[0], 'r')
 var stdout_buf = ""
 var stderr_buf = ""
 
+let envs = [
+    "SERVER_SOFTWARE",
+    "SERVER_NAME",
+    "SERVER_PROTOCOL",
+    "SERVER_PORT",
+
+    "DOCUMENT_ROOT",
+    "SERVER_ADMIN",
+
+    "GATEWAY_INTERFACE",
+    "REQUEST_METHOD",
+
+    "SCRIPT_FILENAME",
+    "SCRIPT_NAME",
+    "CONTENT_TYPE",
+    "CONTENT_LENGTH",
+
+    "QUERY_STRING",
+    "REQUEST_URI",
+
+    "PATH_INFO",
+    "PATH_TRANSLATED",
+
+    "AUTH_TYPE",
+    "REMOTE_HOST",
+    "REMOTE_ADDR",
+    "REMOTE_USER",
+
+    "HTTP_USER_AGENT",
+    "HTTP_HOST",
+    "HTTP_ACCEPT",
+    "HTTP_ACCEPT_CHARSET",
+    "HTTP_ACCEPT_LANGUAGE",
+    "HTTP_CONNECTION",
+    "HTTP_REFERER",
+    "HTTP_USER_AGENT",
+]
+
+function print_environment(stdout) {
+    for (var i in envs) {
+        const env = envs[i]
+        stdout.printf("%s = %s\n", env, std.getenv(env))
+    }
+}
+
 enable("/htdocs/node_modules")
 
 import("./server.mjs")
 .then(module => {
-    _std.out.printf("Content-Type: text/html\r\n")
+    _std.out.printf("Content-Type: text\r\n")
     _std.out.printf("\r\n")
 
-    module.default(_std.in, _std.out)
+    try {
+        print_environment(_std.out)
+        module.default(_std.in, _std.out)
+    
+    } catch (executionError) {
+        _std.out.printf("error %s\n", executionError)
+    
+        if (rebind_stdio) {
+            _std.out.puts("\n--- ERROR DUMP -----\n\n")
+            _std.out.printf("stdout: %s\n", stdout_file.readAsString())
+             _std.out.printf("stderr: %s\n", stderr_file.readAsString())
+        }
+    }
 
+    
+    
     std.exit(0)
     
 })
