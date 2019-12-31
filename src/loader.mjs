@@ -80,7 +80,7 @@ enable("/htdocs/node_modules")
 
 import("./server.mjs")
 .then(module => {
-    _std.out.printf("Content-Type: text\r\n")
+    _std.out.printf("Content-Type: text/html\r\n")
     _std.out.printf("\r\n")
 
     try {
@@ -122,6 +122,10 @@ import("./server.mjs")
         _std.out.printf("stdout: %s\n", stdout_file.readAsString())
         _std.out.printf("stderr: %s\n", stderr_file.readAsString())
     }
+
+
+    _std.out.puts("\n---- ENVIRONMENT -----\n")
+    print_environment(_std.out)
 })
 
 //disable()
