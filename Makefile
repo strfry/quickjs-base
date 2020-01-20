@@ -7,17 +7,19 @@ QUICKJS_INCDIR=$(QUICKJS_PREFIX)/include/quickjs
 
 QUICKJS_CFLAGS=-I$(QUICKJS_INCDIR) # -DJS_SHARED_LIBRARY
 QUICKJS_LDFLAGS=-L$(QUICKJS_LIBDIR) -Lquickjs -lquickjs -lpthread -lm -ldl
+
 CC=cc
 
 HAS_QUICKJS=$(shell command -v qjsc)
 
 all: dynamic static quickjs_build
 
-
-ifndef HAS_QUICKJS
+ifeq ($(HAS_QUICKJS),)
 $(warning "No qjsc found in PATH, adding quickjs to dependencies")
 QJSC=quickjs/qjsc
-$(QJSC): quickjs/libquickjs.a
+quickjs_build: quickjs/libquickjs.a
+
+QUICKJS_INCDIR=quickjs
 
 else
 
